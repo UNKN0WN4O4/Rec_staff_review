@@ -13,7 +13,7 @@ export default function RatingModal({ faculty, onClose }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (rating === 0) return;
+        if (rating === 0 || !faculty) return;
         setSubmitting(true);
 
         try {
@@ -29,19 +29,19 @@ export default function RatingModal({ faculty, onClose }) {
 
                 const currentData = facultyDoc.data();
                 const newCount = (currentData.ratingCount || 0) + 1;
-                // Total score = (old_avg * old_count) + new_rating
-                // But better is to just store current total? Not storing total, storing avg directly
-                // New Avg = ((old_avg * old_count) + new_rating) / new_count
 
                 const oldRating = currentData.rating || 0;
                 const oldCount = currentData.ratingCount || 0;
+
+                // Calculate new weighted average
+                // (Old Total + New Rating) / New Count
                 const newRating = ((oldRating * oldCount) + rating) / newCount;
 
                 // Add review to subcollection
                 const reviewRef = doc(collection(facultyRef, "reviews"));
                 transaction.set(reviewRef, {
-                    userId: currentUser.uid,
-                    userEmail: currentUser.email,
+                    userId: currentUser?.uid || 'anonymous',
+                    userEmail: currentUser?.email || 'anonymous',
                     rating: rating,
                     comment: comment,
                     timestamp: new Date()
@@ -57,73 +57,94 @@ export default function RatingModal({ faculty, onClose }) {
             onClose();
         } catch (err) {
             console.error("Error submitting rating:", err);
-            // Handle error (maybe show toast)
+            // Handle error
         } finally {
             setSubmitting(false);
         }
     };
 
+    if (!faculty) return null;
+
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {/* Flex container for centering */}
+            <div className="flex items-center justify-center min-h-screen px-4 text-center">
+                {/* Backdrop */}
+                <div
+                    className="fixed inset-0 bg-gray-500/75 transition-opacity"
+                    aria-hidden="true"
+                    onClick={onClose}
+                ></div>
 
-                <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={onClose}></div>
+                {/* Modal Panel */}
+                <div className="relative inline-block w-full max-w-lg p-6 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+                    <div className="absolute top-0 right-0 pt-4 pr-4">
+                        <button
+                            type="button"
+                            className="text-gray-400 bg-white rounded-md hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            onClick={onClose}
+                        >
+                            <span className="sr-only">Close</span>
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
 
-                <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                    <div className="sm:flex sm:items-start">
+                        <div className="w-full mt-3 text-center sm:mt-0 sm:text-left">
+                            <h3 className="text-lg font-medium leading-6 text-gray-900" id="modal-title">
+                                Rate {faculty.name}
+                            </h3>
+                            <div className="mt-2 text-sm text-gray-500">
+                                {faculty.department}
+                            </div>
 
-                <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                    <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div className="sm:flex sm:items-start">
-                            <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                                <div className="flex justify-between items-center">
-                                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                        Rate {faculty.name}
-                                    </h3>
-                                    <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
-                                        <X className="h-6 w-6" />
-                                    </button>
+                            {/* Star Rating Section */}
+                            <div className="mt-6">
+                                <p className="mb-2 text-sm font-medium text-gray-700">Select Rating:</p>
+                                <div className="flex items-center justify-center space-x-2 sm:justify-start">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            type="button"
+                                            onMouseEnter={() => setHoverRating(star)}
+                                            onMouseLeave={() => setHoverRating(0)}
+                                            onClick={() => setRating(star)}
+                                            className="focus:outline-none transition-transform hover:scale-110 p-1"
+                                        >
+                                            <Star
+                                                className={`h-10 w-10 transition-colors duration-200 ${(hoverRating || rating) >= star
+                                                        ? "text-yellow-400 fill-current"
+                                                        : "text-gray-300"
+                                                    }`}
+                                            />
+                                        </button>
+                                    ))}
                                 </div>
+                            </div>
 
-                                <div className="mt-4">
-                                    <div className="flex items-center justify-center space-x-2 py-4">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <button
-                                                key={star}
-                                                type="button"
-                                                onMouseEnter={() => setHoverRating(star)}
-                                                onMouseLeave={() => setHoverRating(0)}
-                                                onClick={() => setRating(star)}
-                                                className="focus:outline-none transition-transform hover:scale-110"
-                                            >
-                                                <Star
-                                                    className={`h-8 w-8 ${(hoverRating || rating) >= star
-                                                            ? "text-yellow-400 fill-current"
-                                                            : "text-gray-300"
-                                                        }`}
-                                                />
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="mt-2">
-                                    <textarea
-                                        rows={3}
-                                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-2"
-                                        placeholder="Share your experience (optional)"
-                                        value={comment}
-                                        onChange={(e) => setComment(e.target.value)}
-                                    />
-                                </div>
+                            {/* Comment Section */}
+                            <div className="mt-6">
+                                <label htmlFor="comment" className="block mb-2 text-sm font-medium text-gray-700">
+                                    Review (Optional)
+                                </label>
+                                <textarea
+                                    id="comment"
+                                    rows={3}
+                                    className="block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    placeholder="Share your experience with this faculty member..."
+                                    value={comment}
+                                    onChange={(e) => setComment(e.target.value)}
+                                />
                             </div>
                         </div>
                     </div>
-                    <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+
+                    <div className="mt-8 sm:flex sm:flex-row-reverse">
                         <button
                             type="button"
                             onClick={handleSubmit}
                             disabled={submitting || rating === 0}
-                            className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm ${(submitting || rating === 0) ? 'opacity-50 cursor-not-allowed' : ''
+                            className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm transition-opacity duration-200 ${(submitting || rating === 0) ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
                         >
                             {submitting ? "Submitting..." : "Submit Rating"}
