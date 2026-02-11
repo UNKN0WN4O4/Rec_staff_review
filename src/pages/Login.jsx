@@ -18,7 +18,7 @@ export default function Login() {
             await login();
             navigate("/");
         } catch (err) {
-            console.error("Failed to login", err);
+            // console.error("Failed to login", err);
         }
     };
 

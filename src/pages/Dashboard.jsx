@@ -34,9 +34,9 @@ export default function Dashboard() {
 
             // If empty, seed initial data (for demo purpose, logically this should be admin only/script)
             if (facultyList.length === 0) {
-                await seedData();
+                // await seedData(); // Disabled for production/optimization
                 // re-fetch? or just set state
-                fetchFaculty();
+                // fetchFaculty();
             } else {
                 setFaculty(facultyList);
                 setLoading(false);
@@ -76,7 +76,7 @@ export default function Dashboard() {
                             <span className="text-sm text-gray-600">{currentUser?.email}</span>
                             <button
                                 onClick={() => logout()}
-                                className="p-2 rounded-full text-gray-500 hover:text-gray-700 focus:outline-none"
+                                className="p-2 rounded-full text-gray-500 hover:text-gray-700 focus:outline-none transition-colors"
                             >
                                 <LogOut className="h-5 w-5" />
                             </button>
@@ -90,8 +90,7 @@ export default function Dashboard() {
                     <select
                         value={selectedDept}
                         onChange={(e) => setSelectedDept(e.target.value)}
-                        className="block w-full max-w-xs pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm text-black bg-white"
-                        style={{ color: 'black', backgroundColor: 'white' }}
+                        className="block w-full max-w-xs pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm text-gray-900 bg-white"
                     >
                         {DEPARTMENTS.map((dept) => (
                             <option key={dept} value={dept}>

@@ -15,21 +15,23 @@ export default function RatingModal({ faculty, onClose }) {
 
     // Check if user has already reviewed
     useEffect(() => {
-        const checkExistingReview = async () => {
-            if (!faculty || !currentUser) return;
+        if (!faculty || !currentUser) return;
 
+        const checkExistingReview = async () => {
             setCheckingReview(true);
             try {
+                // Check using the new specific ID format first (cheaper/faster)
+                const specificReviewRef = doc(db, "faculty", faculty.id, "reviews", currentUser.uid);
+                const specificSnap = await getDocs(query(collection(db, "faculty", faculty.id, "reviews"), where("userId", "==", currentUser.uid))); // Kept query for backward compatibility
+
+                // We can just query essentially since we want to catch legacy auto-ids too
+                // The transaction handles the strict enforcement for new ones
                 const reviewsRef = collection(db, "faculty", faculty.id, "reviews");
                 const q = query(reviewsRef, where("userId", "==", currentUser.uid));
                 const querySnapshot = await getDocs(q);
 
                 if (!querySnapshot.empty) {
                     setHasReviewed(true);
-                    // Optionally load their existing review?
-                    // const reviewData = querySnapshot.docs[0].data();
-                    // setRating(reviewData.rating);
-                    // setComment(reviewData.comment);
                 }
             } catch (error) {
                 console.error("Error checking for existing review:", error);
@@ -40,12 +42,6 @@ export default function RatingModal({ faculty, onClose }) {
 
         checkExistingReview();
     }, [faculty, currentUser]);
-
-    // Debugging logs
-    useEffect(() => {
-        console.log("RatingModal Mounted");
-        console.log("Faculty Data:", faculty);
-    }, [faculty]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -62,7 +58,15 @@ export default function RatingModal({ faculty, onClose }) {
                 const facultyDoc = await transaction.get(facultyRef);
                 if (!facultyDoc.exists()) throw "Document does not exist!";
 
-                // Double check inside transaction for concurrency safety (optional but good practice)
+                // Use the user's UID as the document ID for the review
+                const reviewRef = doc(collection(facultyRef, "reviews"), currentUser.uid);
+                const reviewDoc = await transaction.get(reviewRef);
+
+                if (reviewDoc.exists()) {
+                    throw new Error("You have already reviewed this faculty member.");
+                }
+
+                // Legacy check
                 const reviewsRef = collection(facultyRef, "reviews");
                 const q = query(reviewsRef, where("userId", "==", currentUser.uid));
                 const querySnapshot = await getDocs(q);
@@ -76,7 +80,6 @@ export default function RatingModal({ faculty, onClose }) {
                 const oldCount = currentData.ratingCount || 0;
                 const newRating = ((oldRating * oldCount) + rating) / newCount;
 
-                const reviewRef = doc(collection(facultyRef, "reviews"));
                 transaction.set(reviewRef, {
                     userId: currentUser?.uid || 'anonymous',
                     userEmail: currentUser?.email || 'anonymous',
@@ -102,17 +105,16 @@ export default function RatingModal({ faculty, onClose }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Dark Overlay */}
             <div
-                className="fixed inset-0 bg-black/50"
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm"
                 onClick={onClose}
-                style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} // Inline style fallback
             ></div>
 
-            {/* Modal Content - Simplified CSS */}
-            <div className="relative bg-white text-gray-900 rounded-lg shadow-xl w-full max-w-md p-6 z-10" style={{ backgroundColor: 'white', color: 'black' }}>
+            {/* Modal Content */}
+            <div className="relative bg-white text-gray-900 rounded-lg shadow-xl w-full max-w-md p-6 z-10">
                 {/* Header */}
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold">Rate {faculty.name}</h3>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700 p-1">
+                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors">
                         <X className="w-6 h-6" />
                     </button>
                 </div>
@@ -122,14 +124,20 @@ export default function RatingModal({ faculty, onClose }) {
                 </div>
 
                 {checkingReview ? (
-                    <div className="text-center py-4">Checking eligibility...</div>
+                    <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-2"></div>
+                        <p className="text-gray-500 text-sm">Checking eligibility...</p>
+                    </div>
                 ) : hasReviewed ? (
                     <div className="text-center py-6">
+                        <div className="bg-red-50 text-red-600 px-4 py-3 rounded-md inline-block mb-4">
+                            <p className="font-medium">Check complete</p>
+                        </div>
                         <p className="text-red-500 font-medium mb-2">You have already reviewed this faculty member.</p>
                         <p className="text-gray-600 text-sm">Thank you for your feedback!</p>
                         <button
                             onClick={onClose}
-                            className="mt-4 px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                            className="mt-6 px-6 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors font-medium"
                         >
                             Close
                         </button>
@@ -140,8 +148,9 @@ export default function RatingModal({ faculty, onClose }) {
                         <div className="flex justify-center gap-2 mb-6">
                             {[1, 2, 3, 4, 5].map((star) => (
                                 <button
+                                    type="button"
                                     key={star}
-                                    className="focus:outline-none transition-transform hover:scale-110"
+                                    className="focus:outline-none transition-transform hover:scale-110 active:scale-95"
                                     onMouseEnter={() => setHoverRating(star)}
                                     onMouseLeave={() => setHoverRating(0)}
                                     onClick={() => setRating(star)}
@@ -150,8 +159,8 @@ export default function RatingModal({ faculty, onClose }) {
                                         size={40}
                                         className={
                                             (hoverRating || rating) >= star
-                                                ? "text-yellow-400 fill-yellow-400"
-                                                : "text-gray-300"
+                                                ? "text-yellow-400 fill-yellow-400 transition-colors"
+                                                : "text-gray-300 transition-colors"
                                         }
                                     />
                                 </button>
@@ -160,31 +169,35 @@ export default function RatingModal({ faculty, onClose }) {
 
                         {/* Comment */}
                         <textarea
-                            className="w-full border border-gray-300 rounded p-2 mb-4 text-black bg-white"
+                            className="w-full border border-gray-300 rounded-md p-3 mb-4 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none transition-shadow"
                             rows={3}
-                            placeholder="Write a review..."
+                            placeholder="Write a review... (optional)"
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
-                            style={{ color: 'black', backgroundColor: 'white' }}
                         />
 
                         {/* Buttons */}
                         <div className="flex gap-3 justify-end">
                             <button
                                 onClick={onClose}
-                                className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100 bg-white"
-                                style={{ color: 'black', backgroundColor: 'white' }}
+                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 bg-white transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleSubmit}
                                 disabled={submitting || rating === 0}
-                                className={`px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 ${(submitting || rating === 0) ? 'opacity-50 cursor-not-allowed' : ''
+                                className={`px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg ${(submitting || rating === 0)
+                                        ? 'opacity-50 cursor-not-allowed shadow-none'
+                                        : ''
                                     }`}
-                                style={{ backgroundColor: '#4f46e5', color: 'white' }}
                             >
-                                {submitting ? "Submitting..." : "Submit Rating"}
+                                {submitting ? (
+                                    <span className="flex items-center gap-2">
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        Submitting...
+                                    </span>
+                                ) : "Submit Rating"}
                             </button>
                         </div>
                     </>

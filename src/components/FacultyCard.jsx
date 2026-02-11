@@ -1,12 +1,17 @@
+import { memo } from "react";
 import { Star } from "lucide-react";
 
-export default function FacultyCard({ faculty, onRate }) {
+const FacultyCard = memo(({ faculty, onRate }) => {
     return (
         <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
             <div className="p-5">
                 <div className="flex items-center">
                     <div className="flex-shrink-0">
-                        <img className="h-12 w-12 rounded-full" src={faculty.imageUrl || `https://ui-avatars.com/api/?name=${faculty.name}`} alt={faculty.name} />
+                        <img
+                            className="h-12 w-12 rounded-full"
+                            src={faculty.imageUrl || `https://ui-avatars.com/api/?name=${faculty.name}`}
+                            alt={`${faculty.name} - ${faculty.department}`}
+                        />
                     </div>
                     <div className="ml-5 w-0 flex-1">
                         <dl>
@@ -33,7 +38,7 @@ export default function FacultyCard({ faculty, onRate }) {
                     </div>
                     <button
                         onClick={onRate}
-                        className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                        className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
                     >
                         Rate Now
                     </button>
@@ -41,4 +46,6 @@ export default function FacultyCard({ faculty, onRate }) {
             </div>
         </div>
     );
-}
+});
+
+export default FacultyCard;
