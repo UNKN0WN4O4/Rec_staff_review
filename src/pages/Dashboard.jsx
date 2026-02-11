@@ -11,6 +11,14 @@ export default function Dashboard() {
     const [faculty, setFaculty] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedFaculty, setSelectedFaculty] = useState(null);
+    const [selectedDept, setSelectedDept] = useState("All Departments");
+
+    const DEPARTMENTS = [
+        "All Departments",
+        "CSE", "IT", "ECE", "EEE", "MECH",
+        "CIVIL", "AERO", "AUTO", "BME", "BT",
+        "AI&DS", "CSBS", "Food Tech", "Chemical", "H&S"
+    ];
 
     useEffect(() => {
         fetchFaculty();
@@ -78,17 +86,34 @@ export default function Dashboard() {
             </nav>
 
             <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                <div className="mb-6 flex justify-end">
+                    <select
+                        value={selectedDept}
+                        onChange={(e) => setSelectedDept(e.target.value)}
+                        className="block w-full max-w-xs pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm text-black bg-white"
+                        style={{ color: 'black', backgroundColor: 'white' }}
+                    >
+                        {DEPARTMENTS.map((dept) => (
+                            <option key={dept} value={dept}>
+                                {dept}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
                 {loading ? (
                     <div className="text-center py-10">Loading...</div>
                 ) : (
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {faculty.map((fac) => (
-                            <FacultyCard
-                                key={fac.id}
-                                faculty={fac}
-                                onRate={() => setSelectedFaculty(fac)}
-                            />
-                        ))}
+                        {faculty
+                            .filter(fac => selectedDept === "All Departments" || fac.department === selectedDept)
+                            .map((fac) => (
+                                <FacultyCard
+                                    key={fac.id}
+                                    faculty={fac}
+                                    onRate={() => setSelectedFaculty(fac)}
+                                />
+                            ))}
                     </div>
                 )}
             </main>
