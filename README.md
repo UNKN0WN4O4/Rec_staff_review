@@ -1,16 +1,24 @@
-# React + Vite
+# Faculty Rating Portal
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A web application for students of Rajalakshmi Engineering College to rate and review faculty members.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+-   **Authentication**: Secure login using institutional Google accounts (`@rajalakshmi.edu.in`).
+-   **Faculty Listing**: Browse faculty members by department.
+-   **Rating System**: Rate faculty on a 5-star scale and provide anonymous feedback.
+-   **Real-time Updates**: Powered by Firebase Firestore for instant data synchronization.
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+-   **Frontend**: React (Vite)
+-   **Styling**: Tailwind CSS
+-   **Backend/Database**: Firebase (Authentication, Firestore)
+-   **Deployment**: Firebase Hosting via GitHub Actions
 
-## Expanding the ESLint configuration
+## Local Development
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1.  Clone the repository.
+2.  Run `npm install`.
+3.  Create `.env` file with Firebase config (optional, currently hardcoded in `src/firebase.js`).
+4.  Run `npm run dev`.
