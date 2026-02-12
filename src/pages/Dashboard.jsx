@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+// Deployment verification timestamp: {new Date().toISOString()}
 import { useAuth } from "../contexts/AuthContext";
 import { db } from "../firebase";
 import { collection, getDocs, addDoc, query, where } from "firebase/firestore";
