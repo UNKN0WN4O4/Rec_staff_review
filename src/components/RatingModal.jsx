@@ -12,7 +12,8 @@ export default function RatingModal({ faculty, onClose }) {
     const [hoverRating, setHoverRating] = useState(0);
     const [hasReviewed, setHasReviewed] = useState(false);
 
-    const [checkingReview, setCheckingReview] = useState(true);
+    // Default to false so it doesn't show loading immediately if faculty is null
+    const [checkingReview, setCheckingReview] = useState(false);
 
     const CHARACTERISTICS = [
         "Chill", "Strict", "Friendly", "Rude",
@@ -24,33 +25,42 @@ export default function RatingModal({ faculty, onClose }) {
         if (selectedCharacteristics.includes(char)) {
             setSelectedCharacteristics(prev => prev.filter(c => c !== char));
         } else {
-            // Optional: Limit selection to e.g., 3 tags? For now, unlimited as per prompt "student press it".
             setSelectedCharacteristics(prev => [...prev, char]);
         }
     };
 
     // Check if user has already reviewed
     useEffect(() => {
-        if (!faculty || !currentUser) return;
+        if (!currentUser) return;
+        if (!faculty?.id) {
+            // If faculty is missing or has no ID, we can't check.
+            // Just stop checking.
+            setCheckingReview(false);
+            return;
+        }
 
         const checkExistingReview = async () => {
             setCheckingReview(true);
             try {
                 // Check using the new specific ID format first (cheaper/faster)
-                const specificReviewRef = doc(db, "faculty", faculty.id, "reviews", currentUser.uid);
-                const specificSnap = await getDocs(query(collection(db, "faculty", faculty.id, "reviews"), where("userId", "==", currentUser.uid))); // Kept query for backward compatibility
+                // const specificReviewRef = doc(db, "faculty", faculty.id, "reviews", currentUser.uid);
+                // const specificSnap = await getDoc(specificReviewRef); // Use getDoc for single doc check if wanted
 
-                // We can just query essentially since we want to catch legacy auto-ids too
-                // The transaction handles the strict enforcement for new ones
+                // Fallback/Legacy compatible query
                 const reviewsRef = collection(db, "faculty", faculty.id, "reviews");
                 const q = query(reviewsRef, where("userId", "==", currentUser.uid));
                 const querySnapshot = await getDocs(q);
 
                 if (!querySnapshot.empty) {
                     setHasReviewed(true);
+                } else {
+                    setHasReviewed(false);
                 }
             } catch (error) {
                 console.error("Error checking for existing review:", error);
+                // On error, better to let them try and fail at transaction time than block UI?
+                // Or maybe show error state? For now, assume not reviewed to avoid blocking.
+                setHasReviewed(false);
             } finally {
                 setCheckingReview(false);
             }
@@ -61,7 +71,7 @@ export default function RatingModal({ faculty, onClose }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (rating === 0 || !faculty) return;
+        if (rating === 0 || !faculty?.id) return;
         if (hasReviewed) {
             alert("You have already reviewed this faculty member.");
             return;
@@ -72,7 +82,7 @@ export default function RatingModal({ faculty, onClose }) {
             const facultyRef = doc(db, "faculty", faculty.id);
             await runTransaction(db, async (transaction) => {
                 const facultyDoc = await transaction.get(facultyRef);
-                if (!facultyDoc.exists()) throw "Document does not exist!";
+                if (!facultyDoc.exists()) throw new Error("Faculty document does not exist!");
 
                 // Use the user's UID as the document ID for the review
                 const reviewRef = doc(collection(facultyRef, "reviews"), currentUser.uid);
@@ -82,7 +92,7 @@ export default function RatingModal({ faculty, onClose }) {
                     throw new Error("You have already reviewed this faculty member.");
                 }
 
-                // Legacy check
+                // Legacy check inside transaction for double safety against old review format
                 const reviewsRef = collection(facultyRef, "reviews");
                 const q = query(reviewsRef, where("userId", "==", currentUser.uid));
                 const querySnapshot = await getDocs(q);
@@ -94,6 +104,7 @@ export default function RatingModal({ faculty, onClose }) {
                 const newCount = (currentData.ratingCount || 0) + 1;
                 const oldRating = currentData.rating || 0;
                 const oldCount = currentData.ratingCount || 0;
+                // Calculate new weighted average
                 const newRating = ((oldRating * oldCount) + rating) / newCount;
 
                 // Update characteristics counts
@@ -144,15 +155,15 @@ export default function RatingModal({ faculty, onClose }) {
         <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-300 ${isVisible ? "opacity-100" : "opacity-0"}`}>
             {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"
+                className="fixed inset-0 bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm transition-opacity"
                 onClick={handleClose}
             ></div>
 
             {/* Modal Content */}
-            <div className={`relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all duration-300 ${isVisible ? "scale-100 translate-y-0" : "scale-95 translate-y-4"}`}>
+            <div className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all duration-300 ${isVisible ? "scale-100 translate-y-0" : "scale-95 translate-y-4"}`}>
 
                 {/* Header with decorative background */}
-                <div className="relative bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white text-center">
+                <div className="relative bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-700 dark:to-violet-800 p-6 text-white text-center">
                     <button
                         onClick={handleClose}
                         className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition-colors"
@@ -161,7 +172,7 @@ export default function RatingModal({ faculty, onClose }) {
                     </button>
 
                     <div className="mt-2 text-center">
-                        <div className="w-20 h-20 mx-auto rounded-full bg-white p-1 shadow-lg mb-3">
+                        <div className="w-20 h-20 mx-auto rounded-full bg-white dark:bg-gray-700 p-1 shadow-lg mb-3">
                             <img
                                 className="w-full h-full rounded-full object-cover"
                                 src={faculty.imageUrl || `https://ui-avatars.com/api/?name=${faculty.name}&background=6366f1&color=fff`}
@@ -169,26 +180,26 @@ export default function RatingModal({ faculty, onClose }) {
                             />
                         </div>
                         <h3 className="text-2xl font-bold">{faculty.name}</h3>
-                        <p className="text-indigo-100 text-sm font-medium opacity-90">{faculty.department}</p>
+                        <p className="text-indigo-100 dark:text-gray-300 text-sm font-medium opacity-90">{faculty.department}</p>
                     </div>
                 </div>
 
                 <div className="p-6">
                     {checkingReview ? (
                         <div className="text-center py-8">
-                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-                            <p className="text-gray-500 font-medium">Checking eligibility...</p>
+                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 dark:border-indigo-400 mx-auto mb-4"></div>
+                            <p className="text-gray-500 dark:text-gray-400 font-medium">Checking eligibility...</p>
                         </div>
                     ) : hasReviewed ? (
                         <div className="text-center py-6 animate-fade-in">
-                            <div className="bg-red-50 text-red-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <LogOut className="w-8 h-8" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-2">Already Reviewed</h4>
-                            <p className="text-gray-600 mb-6">You have already submitted feedback for this faculty member.</p>
+                            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Already Reviewed</h4>
+                            <p className="text-gray-600 dark:text-gray-400 mb-6">You have already submitted feedback for this faculty member.</p>
                             <button
                                 onClick={handleClose}
-                                className="w-full py-2.5 bg-gray-100 text-gray-800 rounded-xl hover:bg-gray-200 transition-colors font-semibold"
+                                className="w-full py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-semibold"
                             >
                                 Close
                             </button>
@@ -197,7 +208,7 @@ export default function RatingModal({ faculty, onClose }) {
                         <div className="animate-fade-in">
                             {/* Stars */}
                             <div className="flex flex-col items-center mb-8">
-                                <span className="text-sm font-medium text-gray-500 mb-3 uppercase tracking-wider">Tap to Rate</span>
+                                <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider">Tap to Rate</span>
                                 <div className="flex justify-center gap-2">
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <button
@@ -213,7 +224,7 @@ export default function RatingModal({ faculty, onClose }) {
                                                 className={
                                                     (hoverRating || rating) >= star
                                                         ? "text-yellow-400 fill-yellow-400 drop-shadow-sm"
-                                                        : "text-gray-200 fill-gray-50"
+                                                        : "text-gray-200 dark:text-gray-600 fill-gray-50 dark:fill-gray-800"
                                                 }
                                             />
                                         </button>
@@ -221,7 +232,7 @@ export default function RatingModal({ faculty, onClose }) {
                                 </div>
                                 <div className="h-6 mt-1">
                                     {rating > 0 && (
-                                        <span className="text-sm font-bold text-indigo-600 animate-slide-up">
+                                        <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 animate-slide-up">
                                             {rating === 1 && "Poor"}
                                             {rating === 2 && "Fair"}
                                             {rating === 3 && "Good"}
@@ -234,7 +245,7 @@ export default function RatingModal({ faculty, onClose }) {
 
                             {/* Characteristics Pills */}
                             <div className="mb-8">
-                                <p className="text-sm font-bold text-gray-900 mb-3">What are they like?</p>
+                                <p className="text-sm font-bold text-gray-900 dark:text-white mb-3">What are they like?</p>
                                 <div className="flex flex-wrap gap-2">
                                     {CHARACTERISTICS.map((char) => (
                                         <button
@@ -242,7 +253,7 @@ export default function RatingModal({ faculty, onClose }) {
                                             onClick={() => toggleCharacteristic(char)}
                                             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border ${selectedCharacteristics.includes(char)
                                                 ? "bg-indigo-600 text-white border-indigo-600 shadow-md transform scale-105"
-                                                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                                : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-600"
                                                 }`}
                                         >
                                             {char}
@@ -255,14 +266,14 @@ export default function RatingModal({ faculty, onClose }) {
                             <div className="flex gap-3">
                                 <button
                                     onClick={handleClose}
-                                    className="flex-1 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+                                    className="flex-1 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleSubmit}
                                     disabled={submitting || rating === 0}
-                                    className={`flex-1 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-bold shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2`}
+                                    className={`flex-1 py-2.5 bg-indigo-600 dark:bg-indigo-500 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all font-bold shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2`}
                                 >
                                     {submitting ? (
                                         <>

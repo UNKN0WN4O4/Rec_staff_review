@@ -4,7 +4,18 @@
   --font-sans: "Inter", sans-serif;
 }
 
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #ffffff;
+}
+
 body {
-  background-color: var(--color-gray-50);
-  color: var(--color-gray-900);
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.3s, color 0.3s;
 }
