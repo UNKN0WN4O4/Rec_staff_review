@@ -3,63 +3,70 @@ import { Star } from "lucide-react";
 
 const FacultyCard = memo(({ faculty, onRate }) => {
     return (
-        <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
-            <div className="p-5">
-                <div className="flex items-center mb-4">
-                    <div className="flex-shrink-0">
-                        <img
-                            className="h-12 w-12 rounded-full"
-                            src={faculty.imageUrl || `https://ui-avatars.com/api/?name=${faculty.name}`}
-                            alt={`${faculty.name} - ${faculty.department}`}
-                        />
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt className="text-sm font-medium text-gray-500 truncate">
+        <div className="group bg-white/80 backdrop-blur-sm border border-white/20 overflow-hidden rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative">
+            {/* Decorative gradient blob */}
+            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 rounded-full bg-indigo-50/50 blur-3xl group-hover:bg-indigo-100/50 transition-colors duration-500"></div>
+
+            <div className="p-6 relative z-10">
+                <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-4">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-indigo-100 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <img
+                                className="h-14 w-14 rounded-full object-cover border-2 border-white shadow-sm relative z-10"
+                                src={faculty.imageUrl || `https://ui-avatars.com/api/?name=${faculty.name}&background=6366f1&color=fff`}
+                                alt={`${faculty.name}`}
+                            />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-900 leading-tight group-hover:text-indigo-600 transition-colors duration-200">
+                                {faculty.name}
+                            </h3>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 mt-1">
                                 {faculty.department}
-                            </dt>
-                            <dd>
-                                <div className="text-lg font-medium text-gray-900">{faculty.name}</div>
-                            </dd>
-                        </dl>
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                        <div className="flex items-center space-x-1 bg-yellow-50 px-2 py-1 rounded-lg">
+                            <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                            <span className="text-sm font-bold text-gray-900">
+                                {faculty.rating ? faculty.rating.toFixed(1) : "N/A"}
+                            </span>
+                        </div>
+                        <span className="text-xs text-gray-400 mt-1">
+                            {faculty.ratingCount || 0} reviews
+                        </span>
                     </div>
                 </div>
 
                 {/* Top Characteristics */}
-                {faculty.characteristics && Object.keys(faculty.characteristics).length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                        {Object.entries(faculty.characteristics)
-                            .sort(([, a], [, b]) => b - a)
-                            .slice(0, 3)
-                            .map(([char, count]) => (
-                                <span
-                                    key={char}
-                                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700"
-                                >
-                                    {char} <span className="ml-1 text-indigo-400">({count})</span>
-                                </span>
-                            ))}
-                    </div>
-                )}
-            </div>
-            <div className="bg-gray-50 px-5 py-3">
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                        <Star className="h-5 w-5 text-yellow-400 fill-current" />
-                        <span className="ml-2 text-sm font-bold text-gray-900">
-                            {faculty.rating ? faculty.rating.toFixed(1) : "N/A"}
-                        </span>
-                        <span className="ml-1 text-sm text-gray-500">
-                            ({faculty.ratingCount || 0})
-                        </span>
-                    </div>
-                    <button
-                        onClick={onRate}
-                        className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
-                    >
-                        Rate Now
-                    </button>
+                <div className="mt-4 min-h-[28px]">
+                    {faculty.characteristics && Object.keys(faculty.characteristics).length > 0 ? (
+                        <div className="flex flex-wrap gap-2 text-sm text-gray-600">
+                            {Object.entries(faculty.characteristics)
+                                .sort(([, a], [, b]) => b - a)
+                                .slice(0, 3)
+                                .map(([char]) => (
+                                    <span key={char} className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
+                                        #{char}
+                                    </span>
+                                ))}
+                        </div>
+                    ) : (
+                        <p className="text-xs text-gray-400 italic">No tags yet</p>
+                    )}
                 </div>
+            </div>
+
+            <div className="bg-gray-50/50 px-6 py-4 border-t border-gray-100 flex justify-between items-center group-hover:bg-indigo-50/30 transition-colors duration-300">
+                <button
+                    onClick={onRate}
+                    className="w-full flex items-center justify-center space-x-2 py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 transform active:scale-95"
+                >
+                    <Star className="w-4 h-4" />
+                    <span>Rate Faculty</span>
+                </button>
             </div>
         </div>
     );
