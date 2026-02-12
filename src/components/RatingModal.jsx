@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { collection, doc, runTransaction, query, where, getDocs } from "firebase/firestore";
 import { useAuth } from "../contexts/AuthContext";
-import { X, Star } from "lucide-react";
+import { X, Star, LogOut } from "lucide-react";
 
 export default function RatingModal({ faculty, onClose }) {
     const [rating, setRating] = useState(0);
