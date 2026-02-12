@@ -11,8 +11,7 @@ export default function RatingModal({ faculty, onClose }) {
     const { currentUser } = useAuth();
     const [hoverRating, setHoverRating] = useState(0);
     const [hasReviewed, setHasReviewed] = useState(false);
-    const [hoverRating, setHoverRating] = useState(0);
-    const [hasReviewed, setHasReviewed] = useState(false);
+
     const [checkingReview, setCheckingReview] = useState(true);
 
     const CHARACTERISTICS = [
@@ -203,8 +202,8 @@ export default function RatingModal({ faculty, onClose }) {
                                         key={char}
                                         onClick={() => toggleCharacteristic(char)}
                                         className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border ${selectedCharacteristics.includes(char)
-                                                ? "bg-indigo-100 text-indigo-700 border-indigo-200 shadow-sm transform scale-105"
-                                                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                                            ? "bg-indigo-100 text-indigo-700 border-indigo-200 shadow-sm transform scale-105"
+                                            : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                                             }`}
                                     >
                                         {char}
