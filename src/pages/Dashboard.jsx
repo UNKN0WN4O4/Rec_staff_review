@@ -3,8 +3,12 @@ import { useAuth } from "../contexts/AuthContext";
 import { db } from "../firebase";
 import { collection, getDocs, addDoc, query, where } from "firebase/firestore";
 import FacultyCard from "../components/FacultyCard";
-import RatingModal from "../components/RatingModal"; // We'll create this next
-import { LogOut } from "lucide-react";
+import RatingModal from "../components/RatingModal";
+
+import { eeeFaculty } from "../data/eeeFaculty";
+import { mechFaculty } from "../data/mechFaculty";
+import { civilFaculty } from "../data/civilFaculty";
+import { LogOut, Database, Server, Zap, Wrench, HardHat } from "lucide-react";
 
 export default function Dashboard() {
     const { logout, currentUser } = useAuth();
@@ -49,18 +53,199 @@ export default function Dashboard() {
         }
     };
 
-    const seedData = async () => {
-        // Seed Harikumar
+    const seedCSEFaculty = async () => {
+        if (!window.confirm(`Are you sure you want to add ${cseFaculty.length} faculty members?`)) return;
+
+        setLoading(true);
+        let addedCount = 0;
+        let skippedCount = 0;
+
         try {
-            await addDoc(collection(db, "faculty"), {
-                name: "Harikumar",
-                department: "CSE",
-                imageUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Harikumar", // Placeholder
-                rating: 0,
-                ratingCount: 0
-            });
+            for (const fac of cseFaculty) {
+                // Check if already exists
+                const q = query(
+                    collection(db, "faculty"),
+                    where("name", "==", fac.name),
+                    where("department", "==", fac.department)
+                );
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    await addDoc(collection(db, "faculty"), {
+                        ...fac,
+                        imageUrl: "", // Placeholder or leave empty for UI avatar fallback
+                        rating: 0,
+                        ratingCount: 0,
+                        characteristics: {}
+                    });
+                    addedCount++;
+                } else {
+                    skippedCount++;
+                }
+            }
+            alert(`Seeding complete!\nAdded: ${addedCount}\nSkipped (already existed): ${skippedCount}`);
+            fetchFaculty();
         } catch (e) {
             console.error("Seeding failed", e);
+            alert("Error during seeding: " + e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const seedITFaculty = async () => {
+        if (!window.confirm(`Are you sure you want to add ${itFaculty.length} IT faculty members?`)) return;
+
+        setLoading(true);
+        let addedCount = 0;
+        let skippedCount = 0;
+
+        try {
+            for (const fac of itFaculty) {
+                const q = query(
+                    collection(db, "faculty"),
+                    where("name", "==", fac.name),
+                    where("department", "==", fac.department)
+                );
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    await addDoc(collection(db, "faculty"), {
+                        ...fac,
+                        imageUrl: "",
+                        rating: 0,
+                        ratingCount: 0,
+                        characteristics: {}
+                    });
+                    addedCount++;
+                } else {
+                    skippedCount++;
+                }
+            }
+            alert(`IT Seeding complete!\nAdded: ${addedCount}\nSkipped: ${skippedCount}`);
+            fetchFaculty();
+        } catch (e) {
+            console.error("IT Seeding failed", e);
+            alert("Error: " + e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const seedEEEFaculty = async () => {
+        if (!window.confirm(`Are you sure you want to add ${eeeFaculty.length} EEE faculty members?`)) return;
+
+        setLoading(true);
+        let addedCount = 0;
+        let skippedCount = 0;
+
+        try {
+            for (const fac of eeeFaculty) {
+                const q = query(
+                    collection(db, "faculty"),
+                    where("name", "==", fac.name),
+                    where("department", "==", fac.department)
+                );
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    await addDoc(collection(db, "faculty"), {
+                        ...fac,
+                        imageUrl: "",
+                        rating: 0,
+                        ratingCount: 0,
+                        characteristics: {}
+                    });
+                    addedCount++;
+                } else {
+                    skippedCount++;
+                }
+            }
+            alert(`EEE Seeding complete!\nAdded: ${addedCount}\nSkipped: ${skippedCount}`);
+            fetchFaculty();
+        } catch (e) {
+            console.error("EEE Seeding failed", e);
+            alert("Error: " + e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const seedMECHFaculty = async () => {
+        if (!window.confirm(`Are you sure you want to add ${mechFaculty.length} MECH faculty members?`)) return;
+
+        setLoading(true);
+        let addedCount = 0;
+        let skippedCount = 0;
+
+        try {
+            for (const fac of mechFaculty) {
+                const q = query(
+                    collection(db, "faculty"),
+                    where("name", "==", fac.name),
+                    where("department", "==", fac.department)
+                );
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    await addDoc(collection(db, "faculty"), {
+                        ...fac,
+                        imageUrl: "",
+                        rating: 0,
+                        ratingCount: 0,
+                        characteristics: {}
+                    });
+                    addedCount++;
+                } else {
+                    skippedCount++;
+                }
+            }
+            alert(`MECH Seeding complete!\nAdded: ${addedCount}\nSkipped: ${skippedCount}`);
+            fetchFaculty();
+        } catch (e) {
+            console.error("MECH Seeding failed", e);
+            alert("Error: " + e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const seedCIVILFaculty = async () => {
+        if (!window.confirm(`Are you sure you want to add ${civilFaculty.length} CIVIL faculty members?`)) return;
+
+        setLoading(true);
+        let addedCount = 0;
+        let skippedCount = 0;
+
+        try {
+            for (const fac of civilFaculty) {
+                const q = query(
+                    collection(db, "faculty"),
+                    where("name", "==", fac.name),
+                    where("department", "==", fac.department)
+                );
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    await addDoc(collection(db, "faculty"), {
+                        ...fac,
+                        imageUrl: "",
+                        rating: 0,
+                        ratingCount: 0,
+                        characteristics: {}
+                    });
+                    addedCount++;
+                } else {
+                    skippedCount++;
+                }
+            }
+            alert(`CIVIL Seeding complete!\nAdded: ${addedCount}\nSkipped: ${skippedCount}`);
+            fetchFaculty();
+        } catch (e) {
+            console.error("CIVIL Seeding failed", e);
+            alert("Error: " + e.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -79,6 +264,43 @@ export default function Dashboard() {
                                 className="p-2 rounded-full text-gray-500 hover:text-gray-700 focus:outline-none transition-colors"
                             >
                                 <LogOut className="h-5 w-5" />
+                            </button>
+
+                            {/* Temporary Seed Button - Remove after use */}
+                            <button
+                                onClick={seedCSEFaculty}
+                                className="p-2 rounded-full text-indigo-600 hover:bg-indigo-50 focus:outline-none transition-colors"
+                                title="Seed CSE Faculty"
+                            >
+                                <Database className="h-5 w-5" />
+                            </button>
+                            <button
+                                onClick={seedITFaculty}
+                                className="p-2 rounded-full text-blue-600 hover:bg-blue-50 focus:outline-none transition-colors"
+                                title="Seed IT Faculty"
+                            >
+                                <Server className="h-5 w-5" />
+                            </button>
+                            <button
+                                onClick={seedEEEFaculty}
+                                className="p-2 rounded-full text-yellow-600 hover:bg-yellow-50 focus:outline-none transition-colors"
+                                title="Seed EEE Faculty"
+                            >
+                                <Zap className="h-5 w-5" />
+                            </button>
+                            <button
+                                onClick={seedMECHFaculty}
+                                className="p-2 rounded-full text-gray-600 hover:bg-gray-50 focus:outline-none transition-colors"
+                                title="Seed MECH Faculty"
+                            >
+                                <Wrench className="h-5 w-5" />
+                            </button>
+                            <button
+                                onClick={seedCIVILFaculty}
+                                className="p-2 rounded-full text-orange-600 hover:bg-orange-50 focus:outline-none transition-colors"
+                                title="Seed CIVIL Faculty"
+                            >
+                                <HardHat className="h-5 w-5" />
                             </button>
                         </div>
                     </div>

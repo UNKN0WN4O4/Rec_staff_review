@@ -6,12 +6,29 @@ import { X, Star } from "lucide-react";
 
 export default function RatingModal({ faculty, onClose }) {
     const [rating, setRating] = useState(0);
-    const [comment, setComment] = useState("");
+    const [selectedCharacteristics, setSelectedCharacteristics] = useState([]);
     const [submitting, setSubmitting] = useState(false);
     const { currentUser } = useAuth();
     const [hoverRating, setHoverRating] = useState(0);
     const [hasReviewed, setHasReviewed] = useState(false);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [hasReviewed, setHasReviewed] = useState(false);
     const [checkingReview, setCheckingReview] = useState(true);
+
+    const CHARACTERISTICS = [
+        "Chill", "Strict", "Friendly", "Rude",
+        "Helpful", "Harsh", "Writing Heavy",
+        "Knowledgeable", "Interactive", "Funny"
+    ];
+
+    const toggleCharacteristic = (char) => {
+        if (selectedCharacteristics.includes(char)) {
+            setSelectedCharacteristics(prev => prev.filter(c => c !== char));
+        } else {
+            // Optional: Limit selection to e.g., 3 tags? For now, unlimited as per prompt "student press it".
+            setSelectedCharacteristics(prev => [...prev, char]);
+        }
+    };
 
     // Check if user has already reviewed
     useEffect(() => {
@@ -80,15 +97,25 @@ export default function RatingModal({ faculty, onClose }) {
                 const oldCount = currentData.ratingCount || 0;
                 const newRating = ((oldRating * oldCount) + rating) / newCount;
 
+                // Update characteristics counts
+                const charCounts = currentData.characteristics || {};
+                selectedCharacteristics.forEach(char => {
+                    charCounts[char] = (charCounts[char] || 0) + 1;
+                });
+
                 transaction.set(reviewRef, {
                     userId: currentUser?.uid || 'anonymous',
                     userEmail: currentUser?.email || 'anonymous',
                     rating: rating,
-                    comment: comment,
+                    characteristics: selectedCharacteristics,
                     timestamp: new Date()
                 });
 
-                transaction.update(facultyRef, { rating: newRating, ratingCount: newCount });
+                transaction.update(facultyRef, {
+                    rating: newRating,
+                    ratingCount: newCount,
+                    characteristics: charCounts
+                });
             });
             onClose();
         } catch (err) {
@@ -167,14 +194,24 @@ export default function RatingModal({ faculty, onClose }) {
                             ))}
                         </div>
 
-                        {/* Comment */}
-                        <textarea
-                            className="w-full border border-gray-300 rounded-md p-3 mb-4 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none transition-shadow"
-                            rows={3}
-                            placeholder="Write a review... (optional)"
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
-                        />
+                        {/* Characteristics Pills */}
+                        <div className="mb-6">
+                            <p className="text-sm font-medium text-gray-700 mb-3 block">Select Characteristics:</p>
+                            <div className="flex flex-wrap gap-2">
+                                {CHARACTERISTICS.map((char) => (
+                                    <button
+                                        key={char}
+                                        onClick={() => toggleCharacteristic(char)}
+                                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border ${selectedCharacteristics.includes(char)
+                                                ? "bg-indigo-100 text-indigo-700 border-indigo-200 shadow-sm transform scale-105"
+                                                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+                                            }`}
+                                    >
+                                        {char}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
                         {/* Buttons */}
                         <div className="flex gap-3 justify-end">
@@ -188,8 +225,8 @@ export default function RatingModal({ faculty, onClose }) {
                                 onClick={handleSubmit}
                                 disabled={submitting || rating === 0}
                                 className={`px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg ${(submitting || rating === 0)
-                                        ? 'opacity-50 cursor-not-allowed shadow-none'
-                                        : ''
+                                    ? 'opacity-50 cursor-not-allowed shadow-none'
+                                    : ''
                                     }`}
                             >
                                 {submitting ? (

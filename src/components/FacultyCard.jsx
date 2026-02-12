@@ -5,7 +5,7 @@ const FacultyCard = memo(({ faculty, onRate }) => {
     return (
         <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300">
             <div className="p-5">
-                <div className="flex items-center">
+                <div className="flex items-center mb-4">
                     <div className="flex-shrink-0">
                         <img
                             className="h-12 w-12 rounded-full"
@@ -24,6 +24,23 @@ const FacultyCard = memo(({ faculty, onRate }) => {
                         </dl>
                     </div>
                 </div>
+
+                {/* Top Characteristics */}
+                {faculty.characteristics && Object.keys(faculty.characteristics).length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                        {Object.entries(faculty.characteristics)
+                            .sort(([, a], [, b]) => b - a)
+                            .slice(0, 3)
+                            .map(([char, count]) => (
+                                <span
+                                    key={char}
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700"
+                                >
+                                    {char} <span className="ml-1 text-indigo-400">({count})</span>
+                                </span>
+                            ))}
+                    </div>
+                )}
             </div>
             <div className="bg-gray-50 px-5 py-3">
                 <div className="flex justify-between items-center">
