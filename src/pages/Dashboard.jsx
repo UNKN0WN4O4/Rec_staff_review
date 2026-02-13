@@ -9,7 +9,8 @@ import RatingModal from "../components/RatingModal";
 
 
 
-import { LogOut, Search, Star, Moon, Sun } from "lucide-react";
+import { LogOut, Search, Star, Moon, Sun, Database } from "lucide-react";
+import facultyData from "../data/facultyData.json";
 
 export default function Dashboard() {
     const { logout, currentUser } = useAuth();
@@ -24,8 +25,9 @@ export default function Dashboard() {
     const DEPARTMENTS = [
         "All Departments",
         "CSE", "IT", "ECE", "EEE", "MECH",
-        "CIVIL", "AERO", "AUTO", "BME", "BT",
-        "AI&DS", "CSBS", "Food Tech", "Chemical", "H&S"
+        "CIVIL", "AERO", "AUTOMOBILE", "BME", "BIOTECH",
+        "AIDS", "AIML", "CSBS", "CSD", "FOOD TECH", "CHEMICAL", "HUMANITIES",
+        "MEGATRONICS", "R&A", "MBA"
     ];
 
     useEffect(() => {
@@ -51,6 +53,36 @@ export default function Dashboard() {
             }
         } catch (err) {
             console.error("Error fetching faculty:", err);
+            setLoading(false);
+        }
+    };
+
+    const handleSeedData = async () => {
+        if (!confirm("Are you sure you want to seed the database? This might create duplicates if run multiple times.")) return;
+
+        setLoading(true);
+        try {
+            let count = 0;
+            for (const facultyMember of facultyData) {
+                // Check for duplicates based on name and department
+                const q = query(
+                    collection(db, "faculty"),
+                    where("name", "==", facultyMember.name),
+                    where("department", "==", facultyMember.department)
+                );
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    await addDoc(collection(db, "faculty"), facultyMember);
+                    count++;
+                }
+            }
+            alert(`Successfully seeded ${count} new faculty members!`);
+            fetchFaculty();
+        } catch (err) {
+            console.error("Error seeding data:", err);
+            alert("Error seeding data. Check console for details.");
+        } finally {
             setLoading(false);
         }
     };
@@ -126,6 +158,15 @@ export default function Dashboard() {
                     {/* Horizontal Scrollable Pills for Departments */}
                     <div className="flex-1 w-full overflow-x-auto pb-2 sm:pb-0 sm:ml-4 hide-scrollbar">
                         <div className="flex space-x-2">
+                            {/* Seed Button (Temporary) */}
+                            <button
+                                onClick={handleSeedData}
+                                className="whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 border border-green-200 transition-colors"
+                                title="Seed Database"
+                            >
+                                <Database className="h-4 w-4 inline mr-1" />
+                                Seed Data
+                            </button>
                             {DEPARTMENTS.map((dept) => (
                                 <button
                                     key={dept}
