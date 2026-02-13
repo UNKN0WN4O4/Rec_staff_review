@@ -69,11 +69,11 @@ export default function Dashboard() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         <div className="flex items-center space-x-2">
-                            <div className="bg-indigo-600 p-1.5 rounded-lg">
-                                <Star className="h-5 w-5 text-white fill-current" />
+                            <div className="h-10 w-10 rounded-lg overflow-hidden bg-white flex items-center justify-center p-1">
+                                <img src="/REC.png" alt="REC Logo" className="h-full w-full object-contain" />
                             </div>
                             <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400">
-                                Faculty Rate
+                                Staff Rating
                             </h1>
                         </div>
                         <div className="flex items-center space-x-4">
