@@ -4,9 +4,16 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 
+import NotFound from "./pages/NotFound";
+
 function PrivateRoute({ children }) {
   const { currentUser } = useAuth();
   return currentUser ? children : <Navigate to="/login" />;
+}
+
+function NotFoundRoute() {
+  const { currentUser } = useAuth();
+  return currentUser ? <NotFound /> : <Navigate to="/login" />;
 }
 
 function App() {
@@ -24,6 +31,7 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route path="*" element={<NotFoundRoute />} />
           </Routes>
         </ThemeProvider>
       </AuthProvider>
